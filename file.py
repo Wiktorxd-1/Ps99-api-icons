@@ -94,7 +94,7 @@ async def booth_autocomplete(interaction: discord.Interaction, current: str):
     return [app_commands.Choice(name=name, value=name) for name in filtered_choices[:25]]
 
 
-@bot.tree.command(name="eggs", description="Get egg icon and details")
+@bot.tree.command(name="eggs", description="Get egg icon and info")
 @app_commands.describe(egg_name="Name of the egg")
 async def egg_info(interaction: discord.Interaction, egg_name: str):
     image_url_base = "https://ps99.biggamesapi.io/image/"
