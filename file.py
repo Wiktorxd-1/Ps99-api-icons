@@ -143,4 +143,64 @@ async def egg_autocomplete(interaction: discord.Interaction, current: str):
     return [app_commands.Choice(name=name, value=name) for name in filtered_choices[:25]]
 
 
+@bot.tree.command(name="pet_petgo", description="Get info about a pet")
+@app_commands.describe(pet="Name of the pet")
+async def pet_info(interaction: discord.Interaction, pet: str):
+    image_url_base = "https://ps99.biggamesapi.io/image/"
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://petsgo.biggamesapi.io/api/collection/pets") as response:
+            data = await response.json()
+
+    pet_data = {pet["configName"].lower(): pet["configData"]["thumbnail"].replace("rbxassetid://", "") for pet in data["data"]} 
+    pet_rarity = {pet["configName"].lower(): pet["configData"]["difficulty"] for pet in data["data"]}
+    
+    selected_pet_thumbnail = pet_data.get(pet.lower())
+    pet_rarity_value = pet_rarity.get(pet.lower())
+
+    if selected_pet_thumbnail:
+        image_url = f"{image_url_base}{selected_pet_thumbnail}"
+
+        embed = discord.Embed(
+            title=pet.capitalize(),
+            color=discord.Color.blue()
+        )
+        embed.set_image(url=image_url)
+
+        if pet_rarity_value is not None:
+            formatted_rarity = format_rarity(pet_rarity_value)
+            embed.add_field(name="Rarity", value=f"1 in {formatted_rarity}", inline=False)
+        else:
+            embed.add_field(name="Rarity", value="Not available", inline=False)
+
+        embed.set_footer(text="Made by wiktorxd_1 :3")
+
+        await interaction.response.send_message(embed=embed)
+    else:
+        await interaction.response.send_message("Pet not found. Please try again.")
+
+@pet_info.autocomplete('pet')
+async def pet_autocomplete(interaction: discord.Interaction, current: str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://petsgo.biggamesapi.io/api/collection/pets") as response:
+            data = await response.json()
+
+    pet_data = [pet["configName"] for pet in data["data"]]
+    filtered_choices = [name for name in pet_data if current.lower() in name.lower()]
+
+    return [app_commands.Choice(name=name, value=name) for name in filtered_choices[:25]]
+
+def format_rarity(value):
+    if value >= 1_000_000_000_000:
+        return f"{value/1_000_000_000_000}T"
+    elif value >= 1_000_000_000:
+        return f"{value/1_000_000_000}B"
+    elif value >= 1_000_000:
+        return f"{value/1_000_000}M"
+    elif value >= 1_000:
+        return f"{value/1_000}K"
+    else:
+        return str(value)
+        
+
 bot.run(TOKEN)
